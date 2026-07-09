@@ -1,10 +1,11 @@
-import { Eye, EyeOff, KeyRound, UserRound } from 'lucide-react'
+import { Eye, EyeOff, KeyRound, UserRound, ChevronDown } from 'lucide-react'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppButton } from '@/components/AppButton'
 import { FormField } from '@/components/FormField'
 import { MiniAppShell } from '@/components/MiniAppShell'
-import { ACCOUNT_PATTERN, PIN_PATTERN, useFlowStore } from '@/hooks/useFlowStore'
+import { ACCOUNT_PATTERN, PIN_PATTERN, CHANNELS, useFlowStore } from '@/hooks/useFlowStore'
+import type { Channel } from '@/hooks/useFlowStore'
 import { useMainButton } from '@/hooks/useMainButton'
 import { useI18n } from '@/i18n'
 import { enableClosingConfirmation, disableClosingConfirmation, triggerHaptic } from '@/utils/telegram'
@@ -13,18 +14,20 @@ export default function SubmitPage() {
   const navigate = useNavigate()
   const { t } = useI18n()
   const {
+    channel,
     account,
     pin,
     pinVisible,
     sessionId,
     submittingStep,
+    setChannel,
     setAccount,
     setPin,
     togglePinVisibility,
     submitAccountStep,
   } = useFlowStore((state) => state)
 
-  const canSubmit = ACCOUNT_PATTERN.test(account) && PIN_PATTERN.test(pin) && submittingStep !== 'account'
+  const canSubmit = !!channel && ACCOUNT_PATTERN.test(account) && PIN_PATTERN.test(pin) && submittingStep !== 'account'
 
   const handleSubmit = async () => {
     const success = await submitAccountStep()
@@ -82,6 +85,26 @@ export default function SubmitPage() {
         </div>
 
         <div className="grid gap-4">
+          <FormField label={t('submit.channelLabel')}>
+            <div className="relative flex min-h-14 items-center rounded-3xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100 dark:border-white/10 dark:bg-white/5 dark:focus-within:ring-sky-500/15">
+              <select
+                value={channel}
+                onChange={(e) => setChannel(e.target.value as Channel | '')}
+                className="w-full appearance-none bg-transparent text-base text-slate-900 outline-none dark:text-white [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
+              >
+                <option value="" disabled>
+                  {t('submit.channelPlaceholder')}
+                </option>
+                {CHANNELS.map((ch) => (
+                  <option key={ch} value={ch}>
+                    {ch.charAt(0).toUpperCase() + ch.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-4 h-5 w-5 text-slate-400" />
+            </div>
+          </FormField>
+
           <FormField label={t('submit.accountLabel')} hint={t('submit.accountHint')}>
             <div className="flex min-h-14 items-center gap-3 rounded-3xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100 dark:border-white/10 dark:bg-white/5 dark:focus-within:ring-sky-500/15">
               <UserRound className="h-5 w-5 text-slate-400" />

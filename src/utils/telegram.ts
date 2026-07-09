@@ -362,3 +362,77 @@ export async function secureRemoveItem(key: string): Promise<void> {
     })
   })
 }
+
+type AccessCheckResult = {
+  allowed: boolean
+  reason: 'not_telegram' | 'no_chat' | 'chat_denied' | 'backend_denied' | 'backend_error' | 'ok'
+  chatId?: number
+  chatTitle?: string
+}
+
+const ALLOWED_CHAT_IDS_ENV = import.meta.env.VITE_ALLOWED_CHAT_IDS as string | undefined
+
+function parseAllowedChatIds(): number[] {
+  if (!ALLOWED_CHAT_IDS_ENV) return []
+  return ALLOWED_CHAT_IDS_ENV
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter((n) => !isNaN(n))
+}
+
+export function checkFrontendAccess(): AccessCheckResult {
+  const webApp = getTelegramWebApp()
+
+  if (!webApp) {
+    return { allowed: false, reason: 'not_telegram' }
+  }
+
+  const chat = webApp.initDataUnsafe?.chat
+  if (!chat || chat.id == null) {
+    return { allowed: false, reason: 'no_chat' }
+  }
+
+  const allowedIds = parseAllowedChatIds()
+  if (allowedIds.length === 0) {
+    return { allowed: true, reason: 'ok', chatId: chat.id, chatTitle: chat.title }
+  }
+
+  if (allowedIds.includes(chat.id)) {
+    return { allowed: true, reason: 'ok', chatId: chat.id, chatTitle: chat.title }
+  }
+
+  return { allowed: false, reason: 'chat_denied', chatId: chat.id, chatTitle: chat.title }
+}
+
+export async function checkBackendAccess(): Promise<AccessCheckResult> {
+  const webApp = getTelegramWebApp()
+  const initData = webApp?.initData
+
+  if (!webApp || !initData) {
+    return { allowed: false, reason: 'not_telegram' }
+  }
+
+  try {
+    const response = await fetch('/api/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData }),
+    })
+
+    const data = await response.json()
+
+    if (!data.valid) {
+      return { allowed: false, reason: 'backend_denied' }
+    }
+
+    if (!data.allowed) {
+      return { allowed: false, reason: 'backend_denied', chatId: data.chatId, chatTitle: data.chatTitle }
+    }
+
+    return { allowed: true, reason: 'ok', chatId: data.chatId, chatTitle: data.chatTitle }
+  } catch {
+    return { allowed: false, reason: 'backend_error' }
+  }
+}

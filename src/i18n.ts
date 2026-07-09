@@ -26,7 +26,9 @@ const zhCN = {
   'submit.title': '提交账号信息',
   'submit.label': 'Step 1',
   'submit.heading': '提交账号与 PIN',
-  'submit.description': '请输入 11 位数字上线账号与 PIN。账号会自动保存；出于安全考虑，PIN 在刷新后需要重新输入。',
+  'submit.description': '请选择渠道、输入上线账号与 PIN。账号会自动保存；出于安全考虑，PIN 在刷新后需要重新输入。',
+  'submit.channelLabel': '渠道',
+  'submit.channelPlaceholder': '请选择渠道',
   'submit.accountLabel': '上线账号',
   'submit.accountHint': '仅支持 11 位数字，例如 01234567890。',
   'submit.accountPlaceholder': '请输入上线账号',
@@ -73,6 +75,13 @@ const zhCN = {
   'error.otpExpired': '验证码已失效，请重新发送后再试。',
   'error.submitFailed': '账号提交失败，请稍后重试。',
   'error.serviceUnavailable': '服务暂时不可用，请稍后重试。',
+
+  'access.deniedTitle': '访问受限',
+  'access.denied': '您没有权限使用此应用。',
+  'access.notTelegram': '此应用仅限 Telegram 内使用，请在 Telegram 中打开。',
+  'access.noChat': '此应用仅限指定群组内使用，请从群聊中打开。',
+  'access.chatDenied': '当前群组未获得授权，请联系管理员。',
+  'access.backendError': '访问验证服务异常，请稍后重试。',
 } as const
 
 const enUS = {
@@ -99,7 +108,9 @@ const enUS = {
   'submit.title': 'Submit account',
   'submit.label': 'Step 1',
   'submit.heading': 'Submit account and PIN',
-  'submit.description': 'Enter the 11-digit activation account and PIN. The account is saved automatically; the PIN must be re-entered after refresh.',
+  'submit.description': 'Select a channel, enter the activation account and PIN. The account is saved automatically; the PIN must be re-entered after refresh.',
+  'submit.channelLabel': 'Channel',
+  'submit.channelPlaceholder': 'Select a channel',
   'submit.accountLabel': 'Activation account',
   'submit.accountHint': 'Only 11 digits are supported, for example 01234567890.',
   'submit.accountPlaceholder': 'Enter activation account',
@@ -146,6 +157,13 @@ const enUS = {
   'error.otpExpired': 'The code has expired. Please resend it and try again.',
   'error.submitFailed': 'Account submission failed. Please try again later.',
   'error.serviceUnavailable': 'Service is temporarily unavailable. Please try again later.',
+
+  'access.deniedTitle': 'Access Restricted',
+  'access.denied': 'You do not have permission to use this app.',
+  'access.notTelegram': 'This app is only available in Telegram. Please open it in Telegram.',
+  'access.noChat': 'This app is only available in designated groups. Please open it from a group chat.',
+  'access.chatDenied': 'This group is not authorized. Please contact the administrator.',
+  'access.backendError': 'Access verification service error. Please try again later.',
 } satisfies Record<keyof typeof zhCN, string>
 
 export const translations = {

