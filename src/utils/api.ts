@@ -36,12 +36,17 @@ function getErrorMessage(result: ResultBean<unknown>): string {
   return result.msg ?? 'Unknown error'
 }
 
+function getInitData(): string {
+  const webApp = getTelegramWebApp()
+  return webApp?.initData ?? ''
+}
+
 async function post<T>(path: string, body: Record<string, unknown>): Promise<ResultBean<T>> {
   const url = `${getBaseUrl()}${path}`
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, initData: getInitData() }),
   })
 
   if (!response.ok) {
