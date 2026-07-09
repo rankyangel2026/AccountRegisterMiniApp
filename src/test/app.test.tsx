@@ -60,7 +60,6 @@ describe('Telegram Mini App flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /提交 OTP/i }))
 
     expect(await screen.findByText('上线成功')).toBeTruthy()
-    expect(screen.getByText(/SIM-/i)).toBeTruthy()
   })
 
   it('shows an error result when OTP is invalid', async () => {

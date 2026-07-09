@@ -10,7 +10,7 @@ import { closeTelegramMiniApp, showConfirm, triggerHaptic } from '@/utils/telegr
 export default function ResultPage() {
   const navigate = useNavigate()
   const { t } = useI18n()
-  const { resultStatus, resultRef, errorMessage, errorMessageKey, sessionId, resetFlow } = useFlowStore((state) => state)
+  const { resultStatus, errorMessage, errorMessageKey, sessionId, resetFlow } = useFlowStore((state) => state)
 
   useEffect(() => {
     if (!sessionId) {
@@ -90,10 +90,7 @@ export default function ResultPage() {
             </p>
           </div>
 
-          <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/80 px-5 py-4 text-left shadow-sm dark:border-white/10 dark:bg-white/5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">{t('result.refLabel')}</p>
-            <p className="mt-2 font-mono text-base text-slate-900 dark:text-white">{resultRef || t('result.pendingRef')}</p>
-          </div>
+
         </div>
       </div>
     </MiniAppShell>
