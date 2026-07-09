@@ -28,7 +28,7 @@ export function AccessGuard({ children }: { children: React.ReactNode }) {
   const { t } = useI18n()
 
   useEffect(() => {
-    if (import.meta.env.DEV) {
+    if (import.meta.env.VITE_ACCESS_GUARD !== 'true') {
       setState('allowed')
       return
     }
