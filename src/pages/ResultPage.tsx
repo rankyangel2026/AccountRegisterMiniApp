@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom'
 import { AppButton } from '@/components/AppButton'
 import { MiniAppShell } from '@/components/MiniAppShell'
 import { useFlowStore } from '@/hooks/useFlowStore'
+import { useI18n } from '@/i18n'
 import { closeTelegramMiniApp, showConfirm, triggerHaptic } from '@/utils/telegram'
 
 export default function ResultPage() {
   const navigate = useNavigate()
-  const { resultStatus, resultRef, errorMessage, sessionId, resetFlow } = useFlowStore((state) => state)
+  const { t } = useI18n()
+  const { resultStatus, resultRef, errorMessage, errorMessageKey, sessionId, resetFlow } = useFlowStore((state) => state)
 
   useEffect(() => {
     if (!sessionId) {
@@ -17,9 +19,10 @@ export default function ResultPage() {
   }, [sessionId, navigate])
 
   const isSuccess = resultStatus === 'success'
+  const errorText = errorMessageKey ? t(errorMessageKey) : errorMessage
 
   const handleClose = () => {
-    showConfirm('确定要关闭 Mini App 吗？', (ok) => {
+    showConfirm(t('result.confirmClose'), (ok) => {
       if (!ok) {
         return
       }
@@ -27,7 +30,7 @@ export default function ResultPage() {
       const closed = closeTelegramMiniApp()
 
       if (!closed) {
-        useFlowStore.setState({ toast: '当前为浏览器预览模式，无法真正关闭 Telegram Mini App。' })
+        useFlowStore.setState({ toast: t('toast.browserCannotClose') })
       }
 
       triggerHaptic(isSuccess ? 'success' : 'warning')
@@ -42,30 +45,30 @@ export default function ResultPage() {
 
   return (
     <MiniAppShell
-      title="上线结果"
-      label="完成"
+      title={t('result.title')}
+      label={t('result.label')}
       showBack
       onBack={() => navigate('/otp')}
       footer={
         <>
           <AppButton onClick={handleClose}>
             <X className="h-4 w-4" />
-            关闭 Mini App
+            {t('result.close')}
           </AppButton>
           <AppButton variant="secondary" onClick={handleRestart}>
             <RotateCcw className="h-4 w-4" />
-            重新上线
+            {t('result.restart')}
           </AppButton>
           {!isSuccess ? (
             <AppButton variant="secondary" onClick={() => navigate('/otp')}>
               <ExternalLink className="h-4 w-4" />
-              返回 OTP 重试
+              {t('result.retryOtp')}
             </AppButton>
           ) : null}
         </>
       }
     >
-      <div className="grid min-h-[28rem] place-items-center text-center">
+      <div className="grid place-items-center py-8 text-center">
         <div className="space-y-5">
           <div
             className={[
@@ -80,16 +83,16 @@ export default function ResultPage() {
 
           <div className="space-y-3">
             <h2 className="font-display text-[2rem] font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white">
-              {isSuccess ? '上线成功' : '上线失败'}
+              {isSuccess ? t('result.successTitle') : t('result.errorTitle')}
             </h2>
             <p className="mx-auto max-w-[18rem] text-sm leading-6 text-slate-600 dark:text-slate-300">
-              {isSuccess ? '账号已经成功上线，可以返回 Telegram 继续后续操作。' : errorMessage || '校验未通过，请重新确认 OTP 或重新发起流程。'}
+              {isSuccess ? t('result.successBody') : errorText || t('result.errorFallback')}
             </p>
           </div>
 
           <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/80 px-5 py-4 text-left shadow-sm dark:border-white/10 dark:bg-white/5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">结果编号</p>
-            <p className="mt-2 font-mono text-base text-slate-900 dark:text-white">{resultRef || '等待生成'}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">{t('result.refLabel')}</p>
+            <p className="mt-2 font-mono text-base text-slate-900 dark:text-white">{resultRef || t('result.pendingRef')}</p>
           </div>
         </div>
       </div>

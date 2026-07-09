@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { AppRoutes } from '@/App'
 import { useFlowStore } from '@/hooks/useFlowStore'
+import { setLocale } from '@/i18n'
 
 function renderApp(initialEntries: string[] = ['/']) {
   return render(
@@ -15,6 +16,7 @@ function renderApp(initialEntries: string[] = ['/']) {
 describe('Telegram Mini App flow', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    setLocale('zh-CN')
     useFlowStore.getState().resetFlow()
     useFlowStore.setState({ toast: '' })
   })
@@ -26,6 +28,15 @@ describe('Telegram Mini App flow', () => {
     expect(screen.getAllByRole('button', { name: /开始上线/i })[0]).toBeTruthy()
   })
 
+  it('switches the welcome page language', () => {
+    renderApp()
+
+    fireEvent.click(screen.getByRole('button', { name: '切换语言' }))
+
+    expect(screen.getByText('SIM card activation')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Start activation/i })).toBeTruthy()
+  })
+
   it('completes the direct onboarding flow', async () => {
     renderApp()
 
@@ -34,7 +45,7 @@ describe('Telegram Mini App flow', () => {
     expect(await screen.findByText('提交账号与 PIN')).toBeTruthy()
 
     fireEvent.change(screen.getByPlaceholderText('请输入上线账号'), {
-      target: { value: 'demo-account' },
+      target: { value: '01234567890' },
     })
     fireEvent.change(screen.getByPlaceholderText('请输入 PIN'), {
       target: { value: '1234' },
@@ -60,7 +71,7 @@ describe('Telegram Mini App flow', () => {
     })
 
     fireEvent.change(screen.getByPlaceholderText('请输入上线账号'), {
-      target: { value: 'demo-account' },
+      target: { value: '01234567890' },
     })
     fireEvent.change(screen.getByPlaceholderText('请输入 PIN'), {
       target: { value: '1234' },
@@ -76,5 +87,26 @@ describe('Telegram Mini App flow', () => {
 
     expect(await screen.findByText('上线失败')).toBeTruthy()
     expect(screen.getByText('验证码已失效，请重新发送后再试。')).toBeTruthy()
+  })
+
+  it('keeps account and PIN inputs numeric with the required limits', async () => {
+    renderApp(['/submit'])
+
+    await waitFor(() => {
+      expect(screen.getByText('提交账号与 PIN')).toBeTruthy()
+    })
+
+    const accountInput = screen.getByPlaceholderText('请输入上线账号') as HTMLInputElement
+    const pinInput = screen.getByPlaceholderText('请输入 PIN') as HTMLInputElement
+
+    fireEvent.change(accountInput, {
+      target: { value: 'abc01234567890123' },
+    })
+    fireEvent.change(pinInput, {
+      target: { value: '12ab345678' },
+    })
+
+    expect(accountInput.value).toBe('01234567890')
+    expect(pinInput.value).toBe('123456')
   })
 })

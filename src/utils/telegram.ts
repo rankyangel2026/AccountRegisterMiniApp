@@ -1,3 +1,5 @@
+import { translate } from '@/i18n'
+
 export type TelegramTheme = 'light' | 'dark'
 
 type ImpactStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'
@@ -68,6 +70,12 @@ type BackButton = {
   offClick: (fn: () => void) => BackButton
 }
 
+type SecureStorage = {
+  setItem: (key: string, value: string, callback?: (error?: Error) => void) => void
+  getItem: (key: string, callback: (error?: Error, value?: string) => void) => void
+  removeItem: (key: string, callback?: (error?: Error) => void) => void
+}
+
 type TelegramWebApp = {
   ready: () => void
   expand: () => void
@@ -102,6 +110,7 @@ type TelegramWebApp = {
 
   MainButton?: MainButton
   BackButton?: BackButton
+  SecureStorage?: SecureStorage
 
   HapticFeedback?: {
     impactOccurred: (style: ImpactStyle) => void
@@ -172,7 +181,7 @@ export function initTelegramMiniApp(): {
   return {
     isTelegram: Boolean(webApp),
     theme,
-    displayName: user?.first_name || user?.username || 'Telegram 用户',
+    displayName: user?.first_name || user?.username || translate('telegram.defaultUser'),
     themeParams: webApp?.themeParams ?? {},
     version: webApp?.version ?? '6.0',
     platform: webApp?.platform ?? 'unknown',
@@ -285,4 +294,71 @@ export function getMainButton(): MainButton | null {
 
 export function getBackButton(): BackButton | null {
   return getTelegramWebApp()?.BackButton ?? null
+}
+
+function hasSecureStorage(): boolean {
+  const webApp = getTelegramWebApp()
+  return Boolean(webApp?.SecureStorage)
+}
+
+export function isSecureStorageAvailable(): boolean {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  return hasSecureStorage()
+}
+
+export async function secureGetItem(key: string): Promise<string | null> {
+  if (!hasSecureStorage()) {
+    try {
+      return window.localStorage.getItem(key)
+    } catch {
+      return null
+    }
+  }
+
+  return new Promise((resolve) => {
+    getTelegramWebApp()!.SecureStorage!.getItem(key, (error, value) => {
+      if (error) {
+        resolve(null)
+        return
+      }
+      resolve(value ?? null)
+    })
+  })
+}
+
+export async function secureSetItem(key: string, value: string): Promise<void> {
+  if (!hasSecureStorage()) {
+    window.localStorage.setItem(key, value)
+    return
+  }
+
+  return new Promise((resolve, reject) => {
+    getTelegramWebApp()!.SecureStorage!.setItem(key, value, (error) => {
+      if (error) {
+        reject(error)
+        return
+      }
+      resolve()
+    })
+  })
+}
+
+export async function secureRemoveItem(key: string): Promise<void> {
+  if (!hasSecureStorage()) {
+    window.localStorage.removeItem(key)
+    return
+  }
+
+  return new Promise((resolve, reject) => {
+    getTelegramWebApp()!.SecureStorage!.removeItem(key, (error) => {
+      if (error) {
+        reject(error)
+        return
+      }
+      resolve()
+    })
+  })
 }

@@ -7,6 +7,7 @@ import {
   type TelegramTheme,
   type ThemeParams,
 } from '@/utils/telegram'
+import { translate } from '@/i18n'
 
 type TelegramRuntime = {
   isTelegram: boolean
@@ -20,7 +21,7 @@ type TelegramRuntime = {
 const defaultRuntime: TelegramRuntime = {
   isTelegram: false,
   theme: 'light',
-  displayName: '访客',
+  displayName: translate('telegram.guest'),
   themeParams: {},
   version: '6.0',
   platform: 'unknown',

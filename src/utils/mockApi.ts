@@ -1,3 +1,5 @@
+import type { TranslationKey } from '@/i18n'
+
 export type SubmitAccountRequest = {
   account: string
   pin: string
@@ -17,7 +19,7 @@ export type VerifyOtpRequest = {
 export type VerifyOtpResponse = {
   success: boolean
   resultRef: string
-  message?: string
+  messageKey?: TranslationKey
 }
 
 const MOCK_DELAY_MS = 240
@@ -43,7 +45,7 @@ export async function verifyOtp(payload: VerifyOtpRequest): Promise<VerifyOtpRes
     return {
       success: false,
       resultRef: `SIM-${Date.now().toString(36).toUpperCase()}`,
-      message: '验证码已失效，请重新发送后再试。',
+      messageKey: 'error.otpExpired',
     }
   }
 

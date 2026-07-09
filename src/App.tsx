@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { useFlowStore } from '@/hooks/useFlowStore'
+import { useTelegramMiniApp } from '@/hooks/useTelegramMiniApp'
+import { useI18n } from '@/i18n'
 import OtpPage from '@/pages/OtpPage'
 import ResultPage from '@/pages/ResultPage'
 import SubmitPage from '@/pages/SubmitPage'
@@ -24,5 +26,14 @@ export function AppRoutes() {
 }
 
 export default function App() {
+  const { locale, t } = useI18n()
+
+  useTelegramMiniApp()
+
+  useEffect(() => {
+    document.documentElement.lang = locale
+    document.title = t('app.documentTitle')
+  }, [locale, t])
+
   return <AppRoutes />
 }

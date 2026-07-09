@@ -9,6 +9,7 @@ type AppButtonProps = {
   onClick?: () => void
   children: ReactNode
   type?: 'button' | 'submit'
+  className?: string
 }
 
 export function AppButton({
@@ -18,6 +19,7 @@ export function AppButton({
   onClick,
   children,
   type = 'button',
+  className,
 }: AppButtonProps) {
   return (
     <button
@@ -29,10 +31,11 @@ export function AppButton({
         variant === 'primary'
           ? 'border-sky-500 bg-sky-500 text-white shadow-lg shadow-sky-500/25 hover:border-sky-400 hover:bg-sky-400'
           : 'border-slate-200 bg-white text-slate-800 hover:border-sky-200 hover:text-sky-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:border-sky-500 dark:hover:text-sky-300',
+        className,
       )}
     >
       {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-      <span>{children}</span>
+      <span className="flex min-w-0 items-center justify-center gap-2">{children}</span>
     </button>
   )
 }

@@ -1,7 +1,11 @@
 import { create } from 'zustand'
 import { submitAccount, verifyOtp } from '@/utils/mockApi'
+import { secureGetItem, secureSetItem, secureRemoveItem } from '@/utils/telegram'
+import { translate, type TranslationKey } from '@/i18n'
 
 const STORAGE_KEY = 'tg-miniapp-direct-v2'
+export const ACCOUNT_PATTERN = /^\d{11}$/
+export const PIN_PATTERN = /^\d{4,6}$/
 
 type ResultStatus = 'idle' | 'success' | 'error'
 
@@ -12,6 +16,7 @@ type PersistedDraft = {
   resultStatus: ResultStatus
   resultRef: string
   errorMessage: string
+  errorMessageKey: TranslationKey | ''
 }
 
 type FlowStore = PersistedDraft & {
@@ -19,7 +24,8 @@ type FlowStore = PersistedDraft & {
   pinVisible: boolean
   submittingStep: 'account' | 'otp' | null
   toast: string
-  hydrateDraft: () => void
+  hydrated: boolean
+  hydrateDraft: () => Promise<void>
   setAccount: (value: string) => void
   setPin: (value: string) => void
   setOtp: (value: string) => void
@@ -37,6 +43,7 @@ const persistedDefaults: PersistedDraft = {
   resultStatus: 'idle',
   resultRef: '',
   errorMessage: '',
+  errorMessageKey: '',
 }
 
 const defaultState: Omit<FlowStore, keyof PersistedDraft> = {
@@ -44,7 +51,8 @@ const defaultState: Omit<FlowStore, keyof PersistedDraft> = {
   pinVisible: false,
   submittingStep: null,
   toast: '',
-  hydrateDraft: () => undefined,
+  hydrated: false,
+  hydrateDraft: async () => undefined,
   setAccount: () => undefined,
   setPin: () => undefined,
   setOtp: () => undefined,
@@ -55,13 +63,13 @@ const defaultState: Omit<FlowStore, keyof PersistedDraft> = {
   resetFlow: () => undefined,
 }
 
-function readDraft(): PersistedDraft {
+async function readDraft(): Promise<PersistedDraft> {
   if (typeof window === 'undefined') {
     return persistedDefaults
   }
 
   try {
-    const rawDraft = window.localStorage.getItem(STORAGE_KEY)
+    const rawDraft = await secureGetItem(STORAGE_KEY)
 
     if (!rawDraft) {
       return persistedDefaults
@@ -73,7 +81,7 @@ function readDraft(): PersistedDraft {
   }
 }
 
-function writeDraft(state: FlowStore) {
+async function writeDraft(state: FlowStore) {
   if (typeof window === 'undefined') {
     return
   }
@@ -85,23 +93,34 @@ function writeDraft(state: FlowStore) {
     resultStatus: state.resultStatus,
     resultRef: state.resultRef,
     errorMessage: state.errorMessage,
+    errorMessageKey: state.errorMessageKey,
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft))
+  try {
+    await secureSetItem(STORAGE_KEY, JSON.stringify(draft))
+  } catch {
+    // silent fail
+  }
 }
 
 export const useFlowStore = create<FlowStore>((set, get) => ({
   ...persistedDefaults,
   ...defaultState,
-  hydrateDraft: () => {
-    set(readDraft())
+  hydrateDraft: async () => {
+    const draft = await readDraft()
+    set({ ...draft, hydrated: true })
   },
   setAccount: (value) => {
-    set((state) => ({ account: value.trimStart(), resultStatus: state.resultStatus === 'idle' ? state.resultStatus : 'idle' }))
+    set((state) => ({
+      account: value.replace(/\D/g, '').slice(0, 11),
+      resultStatus: state.resultStatus === 'idle' ? state.resultStatus : 'idle',
+      errorMessage: state.resultStatus === 'idle' ? state.errorMessage : '',
+      errorMessageKey: state.resultStatus === 'idle' ? state.errorMessageKey : '',
+    }))
     writeDraft(get())
   },
   setPin: (value) => {
-    set({ pin: value.replace(/\D/g, '').slice(0, 8) })
+    set({ pin: value.replace(/\D/g, '').slice(0, 6) })
   },
   setOtp: (value) => {
     set({ otp: value.replace(/\D/g, '').slice(0, 6) })
@@ -114,8 +133,8 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
   submitAccountStep: async () => {
     const { account, pin } = get()
 
-    if (account.trim().length < 3 || pin.length < 4) {
-      set({ toast: '请填写账号并输入至少 4 位 PIN。' })
+    if (!ACCOUNT_PATTERN.test(account) || !PIN_PATTERN.test(pin)) {
+      set({ toast: translate('toast.invalidAccountPin') })
       return false
     }
 
@@ -131,7 +150,8 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
         resultStatus: 'idle',
         resultRef: '',
         errorMessage: '',
-        toast: 'OTP 已发送，当前链路为账号直连模式。',
+        errorMessageKey: '',
+        toast: translate('toast.otpSent'),
       })
 
       writeDraft(get())
@@ -140,8 +160,9 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
       set({
         submittingStep: null,
         resultStatus: 'error',
-        errorMessage: '账号提交失败，请稍后重试。',
-        toast: '账号提交失败，请稍后重试。',
+        errorMessage: translate('error.submitFailed'),
+        errorMessageKey: 'error.submitFailed',
+        toast: translate('toast.submitFailed'),
       })
       writeDraft(get())
       return false
@@ -151,7 +172,7 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
     const { otp, sessionId } = get()
 
     if (!/^\d{6}$/.test(otp)) {
-      set({ toast: '请输入 6 位 OTP。' })
+      set({ toast: translate('toast.invalidOtp') })
       return false
     }
 
@@ -164,8 +185,9 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
         submittingStep: null,
         resultStatus: response.success ? 'success' : 'error',
         resultRef: response.resultRef,
-        errorMessage: response.message ?? '',
-        toast: response.success ? '上线结果已返回。' : 'OTP 校验失败，请重新确认。',
+        errorMessage: response.messageKey ? translate(response.messageKey) : '',
+        errorMessageKey: response.messageKey ?? '',
+        toast: response.success ? translate('toast.otpSuccess') : translate('toast.otpFailed'),
       })
 
       writeDraft(get())
@@ -174,21 +196,27 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
       set({
         submittingStep: null,
         resultStatus: 'error',
-        errorMessage: '服务暂时不可用，请稍后重试。',
-        toast: '服务暂时不可用，请稍后重试。',
+        errorMessage: translate('error.serviceUnavailable'),
+        errorMessageKey: 'error.serviceUnavailable',
+        toast: translate('toast.serviceUnavailable'),
       })
       writeDraft(get())
       return false
     }
   },
-  resetFlow: () => {
+  resetFlow: async () => {
     set({
       ...persistedDefaults,
       pin: '',
       pinVisible: false,
       submittingStep: null,
-      toast: '流程已重置，可以重新发起上线。',
+      toast: translate('toast.flowReset'),
     })
-    writeDraft(get())
+
+    try {
+      await secureRemoveItem(STORAGE_KEY)
+    } catch {
+      // silent fail
+    }
   },
 }))
