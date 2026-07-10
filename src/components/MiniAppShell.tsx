@@ -69,7 +69,7 @@ export function MiniAppShell({ title, label, showBack, onBack, footer, children 
   }, [showBack, onBack, handleBack])
 
   return (
-    <main className="min-h-screen bg-white px-5 pb-6 pt-4 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+    <main className="h-dvh overflow-hidden bg-white px-5 pb-6 pt-4 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
       <div className="flex items-center justify-between gap-3 pb-4">
         <button
           type="button"
@@ -99,7 +99,7 @@ export function MiniAppShell({ title, label, showBack, onBack, footer, children 
         </button>
       </div>
 
-      <div className="flex min-h-[calc(100dvh-5rem)] flex-col justify-between gap-4">
+      <div className="flex min-h-[calc(100dvh-5rem)] flex-col justify-between gap-4 overflow-y-auto">
         <div className="animate-enter">{children}</div>
         {footer ? <div className="grid gap-3 pb-2">{footer}</div> : null}
       </div>

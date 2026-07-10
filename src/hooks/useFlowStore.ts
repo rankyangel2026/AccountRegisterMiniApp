@@ -134,7 +134,7 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
     set({ pin: value.replace(/\D/g, '').slice(0, 6) })
   },
   setOtp: (value) => {
-    set({ otp: value.replace(/\D/g, '').slice(0, 6) })
+    set({ otp: value })
     writeDraft(get())
   },
   togglePinVisibility: () => {
@@ -208,7 +208,7 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
   verifyOtpStep: async () => {
     const { otp, account, channel } = get()
 
-    if (!/^\d{6}$/.test(otp)) {
+    if (!otp.trim()) {
       set({ toast: translate('toast.invalidOtp') })
       return false
     }
