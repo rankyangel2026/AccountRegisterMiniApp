@@ -2,7 +2,6 @@ import { ArrowRight, BadgeCheck, KeyRound, MessageSquareText } from 'lucide-reac
 import { useNavigate } from 'react-router-dom'
 import { AppButton } from '@/components/AppButton'
 import { MiniAppShell } from '@/components/MiniAppShell'
-import { useMainButton } from '@/hooks/useMainButton'
 import { useI18n, type TranslationKey } from '@/i18n'
 import { triggerHaptic } from '@/utils/telegram'
 
@@ -35,12 +34,6 @@ export default function WelcomePage() {
     triggerHaptic('light')
     navigate('/submit')
   }
-
-  useMainButton({
-    text: t('welcome.start'),
-    visible: true,
-    onClick: handleStart,
-  })
 
   return (
     <MiniAppShell

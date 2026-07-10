@@ -6,7 +6,6 @@ import { FormField } from '@/components/FormField'
 import { MiniAppShell } from '@/components/MiniAppShell'
 import { ACCOUNT_PATTERN, PIN_PATTERN, CHANNELS, useFlowStore } from '@/hooks/useFlowStore'
 import type { Channel } from '@/hooks/useFlowStore'
-import { useMainButton } from '@/hooks/useMainButton'
 import { useI18n } from '@/i18n'
 import { enableClosingConfirmation, disableClosingConfirmation, triggerHaptic } from '@/utils/telegram'
 
@@ -39,14 +38,6 @@ export default function SubmitPage() {
       triggerHaptic('warning')
     }
   }
-
-  useMainButton({
-    text: t('submit.mainButton'),
-    visible: canSubmit,
-    disabled: !canSubmit,
-    loading: submittingStep === 'account',
-    onClick: handleSubmit,
-  })
 
   useEffect(() => {
     if (sessionId) {

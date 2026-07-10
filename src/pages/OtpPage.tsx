@@ -5,7 +5,6 @@ import { AppButton } from '@/components/AppButton'
 import { FormField } from '@/components/FormField'
 import { MiniAppShell } from '@/components/MiniAppShell'
 import { useFlowStore } from '@/hooks/useFlowStore'
-import { useMainButton } from '@/hooks/useMainButton'
 import { useI18n } from '@/i18n'
 import { enableClosingConfirmation, disableClosingConfirmation, triggerHaptic } from '@/utils/telegram'
 
@@ -27,14 +26,6 @@ export default function OtpPage() {
     triggerHaptic('light')
     useFlowStore.setState({ toast: t('toast.otpResent') })
   }
-
-  useMainButton({
-    text: t('otp.mainButton'),
-    visible: canSubmit,
-    disabled: !canSubmit,
-    loading: submittingStep === 'otp',
-    onClick: handleSubmitOtp,
-  })
 
   useEffect(() => {
     if (!sessionId) {
