@@ -6,7 +6,7 @@ export function DebugBar() {
   const webApp = getTelegramWebApp()
   const initData = webApp?.initData
 
-  if (!import.meta.env.DEV && import.meta.env.VITE_DEBUG_BAR !== 'true') {
+  if (!import.meta.env.DEV) {
     return null
   }
 
