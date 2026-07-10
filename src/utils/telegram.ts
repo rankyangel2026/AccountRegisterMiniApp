@@ -365,7 +365,7 @@ export async function secureRemoveItem(key: string): Promise<void> {
 
 type AccessCheckResult = {
   allowed: boolean
-  reason: 'not_telegram' | 'no_chat' | 'chat_denied' | 'backend_denied' | 'backend_error' | 'ok'
+  reason: 'not_telegram' | 'no_chat' | 'chat_denied' | 'ok'
   chatId?: number
   chatTitle?: string
 }
@@ -404,35 +404,4 @@ export function checkFrontendAccess(): AccessCheckResult {
   }
 
   return { allowed: false, reason: 'chat_denied', chatId: chat.id, chatTitle: chat.title }
-}
-
-export async function checkBackendAccess(): Promise<AccessCheckResult> {
-  const webApp = getTelegramWebApp()
-  const initData = webApp?.initData
-
-  if (!webApp || !initData) {
-    return { allowed: false, reason: 'not_telegram' }
-  }
-
-  try {
-    const response = await fetch('/api/validate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData }),
-    })
-
-    const data = await response.json()
-
-    if (!data.valid) {
-      return { allowed: false, reason: 'backend_denied' }
-    }
-
-    if (!data.allowed) {
-      return { allowed: false, reason: 'backend_denied', chatId: data.chatId, chatTitle: data.chatTitle }
-    }
-
-    return { allowed: true, reason: 'ok', chatId: data.chatId, chatTitle: data.chatTitle }
-  } catch {
-    return { allowed: false, reason: 'backend_error' }
-  }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ShieldOff } from 'lucide-react'
-import { checkBackendAccess, checkFrontendAccess } from '@/utils/telegram'
+import { checkFrontendAccess } from '@/utils/telegram'
 import { useI18n } from '@/i18n'
 import type { TranslationKey } from '@/i18n'
 
@@ -13,17 +13,14 @@ function getDenyReasonKey(reason: string): TranslationKey {
     case 'no_chat':
       return 'access.noChat'
     case 'chat_denied':
-    case 'backend_denied':
       return 'access.chatDenied'
-    case 'backend_error':
-      return 'access.backendError'
     default:
       return 'access.denied'
   }
 }
 
 export function AccessGuard({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AccessState>('checking')
+  const [state, setState] = useState<AccessState>('denied')
   const [denyReason, setDenyReason] = useState<string>('denied')
   const { t } = useI18n()
 
@@ -33,36 +30,15 @@ export function AccessGuard({ children }: { children: React.ReactNode }) {
       return
     }
 
-    let cancelled = false
+    const result = checkFrontendAccess()
 
-    async function check() {
-      const frontendResult = checkFrontendAccess()
-
-      if (!frontendResult.allowed) {
-        if (!cancelled) {
-          setDenyReason(frontendResult.reason)
-          setState('denied')
-        }
-        return
-      }
-
-      const backendResult = await checkBackendAccess()
-
-      if (!cancelled) {
-        if (backendResult.allowed) {
-          setState('allowed')
-        } else {
-          setDenyReason(backendResult.reason)
-          setState('denied')
-        }
-      }
+    if (result.allowed) {
+      setState('allowed')
+    } else {
+      setState('denied')
     }
 
-    check()
-
-    return () => {
-      cancelled = true
-    }
+    setDenyReason(result.reason)
   }, [])
 
   if (state === 'checking') {

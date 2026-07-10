@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { AccessGuard } from '@/components/AccessGuard'
+import { DebugBar } from '@/components/DebugBar'
 import { useFlowStore } from '@/hooks/useFlowStore'
 import { useTelegramMiniApp } from '@/hooks/useTelegramMiniApp'
 import { useI18n } from '@/i18n'
@@ -39,6 +40,7 @@ export default function App() {
   return (
     <AccessGuard>
       <AppRoutes />
+      <DebugBar />
     </AccessGuard>
   )
 }
