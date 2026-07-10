@@ -2,9 +2,13 @@ import { useState } from 'react'
 import { getTelegramWebApp } from '@/utils/telegram'
 
 export function DebugBar() {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const webApp = getTelegramWebApp()
   const initData = webApp?.initData
+
+  if (!import.meta.env.DEV && import.meta.env.VITE_DEBUG_BAR !== 'true') {
+    return null
+  }
 
   if (!initData) {
     return null

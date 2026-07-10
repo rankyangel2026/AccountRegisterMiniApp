@@ -1,4 +1,4 @@
-import { getTelegramWebApp } from '@/utils/telegram'
+import { getTelegramInitData, getTelegramWebApp } from '@/utils/telegram'
 import type { TranslationKey } from '@/i18n'
 
 type ResultBean<T> = {
@@ -38,10 +38,13 @@ function getErrorMessage(result: ResultBean<unknown>): string {
 
 async function post<T>(path: string, body: Record<string, unknown>): Promise<ResultBean<T>> {
   const url = `${getBaseUrl()}${path}`
+  const initData = getTelegramInitData()
+  const requestBody = initData ? { ...body, initData } : body
+
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(requestBody),
   })
 
   if (!response.ok) {

@@ -161,6 +161,10 @@ export function getTelegramWebApp(): TelegramWebApp | null {
   return window.Telegram?.WebApp ?? null
 }
 
+export function getTelegramInitData(): string {
+  return getTelegramWebApp()?.initData ?? ''
+}
+
 export function initTelegramMiniApp(): {
   isTelegram: boolean
   theme: TelegramTheme
@@ -170,16 +174,17 @@ export function initTelegramMiniApp(): {
   platform: string
 } {
   const webApp = getTelegramWebApp()
+  const initData = getTelegramInitData()
   const user = webApp?.initDataUnsafe?.user
   const theme = webApp?.colorScheme === 'dark' ? 'dark' : 'light'
 
-  if (webApp) {
+  if (webApp && initData) {
     webApp.ready()
     webApp.expand()
   }
 
   return {
-    isTelegram: Boolean(webApp),
+    isTelegram: Boolean(initData),
     theme,
     displayName: user?.first_name || user?.username || translate('telegram.defaultUser'),
     themeParams: webApp?.themeParams ?? {},
@@ -385,18 +390,18 @@ function parseAllowedChatIds(): number[] {
 export function checkFrontendAccess(): AccessCheckResult {
   const webApp = getTelegramWebApp()
 
-  if (!webApp) {
+  if (!webApp?.initData) {
     return { allowed: false, reason: 'not_telegram' }
+  }
+
+  const allowedIds = parseAllowedChatIds()
+  if (allowedIds.length === 0) {
+    return { allowed: true, reason: 'ok' }
   }
 
   const chat = webApp.initDataUnsafe?.chat
   if (!chat || chat.id == null) {
     return { allowed: false, reason: 'no_chat' }
-  }
-
-  const allowedIds = parseAllowedChatIds()
-  if (allowedIds.length === 0) {
-    return { allowed: true, reason: 'ok', chatId: chat.id, chatTitle: chat.title }
   }
 
   if (allowedIds.includes(chat.id)) {
