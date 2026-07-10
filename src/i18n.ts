@@ -81,7 +81,7 @@ const zhCN = {
   'access.notTelegram': '此应用仅限 Telegram 内使用，请在 Telegram 中打开。',
   'access.noChat': '此应用仅限指定群组内使用，请从群聊中打开。',
   'access.chatDenied': '当前群组未获得授权，请联系管理员。',
-  'access.backendError': '访问验证服务异常，请稍后重试。',
+  
 } as const
 
 const enUS = {
@@ -163,7 +163,7 @@ const enUS = {
   'access.notTelegram': 'This app is only available in Telegram. Please open it in Telegram.',
   'access.noChat': 'This app is only available in designated groups. Please open it from a group chat.',
   'access.chatDenied': 'This group is not authorized. Please contact the administrator.',
-  'access.backendError': 'Access verification service error. Please try again later.',
+  
 } satisfies Record<keyof typeof zhCN, string>
 
 export const translations = {
